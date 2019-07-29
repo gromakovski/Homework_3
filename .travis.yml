@@ -1,0 +1,47 @@
+language: cpp
+dist: xenial
+addons:
+  apt:
+    update: true
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - g++-8
+      - libgtest-dev
+      - build-essential
+      - cmake
+before_script:
+- sudo apt-get install libboost-test-dev -y
+- echo "deb http://archive.ubuntu.com/ubuntu xenial main universe" | sudo tee -a /etc/apt/sources.list
+- sudo apt-get install libspdlog-dev -y
+- sudo apt-get install libgtest-dev -y
+- sudo apt-get install cmake -y
+- cd /usr/src/gtest
+- sudo cmake CMakeLists.txt
+- sudo make
+- sudo cp *.a /usr/lib
+- sudo apt-get update -qq
+- cd -
+
+before_install:
+  # C++17
+  - sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
+  - sudo apt-get update -qq
+  
+# Install dependencies
+install: 
+  # C++17
+  - sudo apt-get install -qq g++-8
+  - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-8 90
+  
+script:
+- cmake .
+- cmake --build .
+- cmake --build . --target test
+- cmake --build . --target package
+
+deploy:
+  provider: script
+  skip_cleanup: true
+  script:
+  - curl -T filter-0.0.$TRAVIS_BUILD_NUMBER-Linux.deb -uvladimir-gr:$BINTRAY_API_KEY "https://api.bintray.com/content/vladimir-gr/OTUS/HOMEWORK_3/$TRAVIS_BUILD_NUMBER/allocator-0.0.$TRAVIS_BUILD_NUMBER-Linux.deb;deb_distribution=trusty;deb_component=main;deb_architecture=amd64;publish=1"
